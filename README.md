@@ -18,12 +18,12 @@ http-server <directory>
 
 ## Screenshots:
 ### CRT and Curve shader active
-![CRT and Curve shader active](Screenshot_1.png)
+![CRT and Curve shader active](visuals/Screenshot_1.png)
 ### No post-processing effects
-![No post-processing effects](Screenshot_2.png)
+![No post-processing effects](visuals/Screenshot_2.png)
 ### With and without exaggerated shaders, same viewpoint
-![Without exaggerated shaders](Screenshot_3.png)
-![With without exaggerated shaders](Screenshot_4.png)
+![Without exaggerated shaders](visuals/Screenshot_3.png)
+![With without exaggerated shaders](visuals/Screenshot_4.png)
 
 ## Credits:
 The 3D model is ripped from the N64 game *The Legend of Zelda: Ocarina of Time*.
