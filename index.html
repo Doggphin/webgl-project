@@ -1,0 +1,752 @@
+<!doctype html>
+<html lang="en">
+  <head>
+	<meta charset="utf-8">
+	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.3.1/dist/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+	<link rel="styles" href="styles.css">
+
+    <title>Wrong Warp</title>
+    <script src="mat4.js" type="text/javascript"></script>
+	<script src="gltfloader.js" type="text/javascript"></script>
+
+    <script id="shader-vs" type="x-shader/x-vertex"> #version 300 es
+		precision highp float;
+		in vec3 POS;
+		in vec3 NORM;
+		in vec2 T2D;
+		uniform mat4 ProjectionMatrix;
+		uniform mat4 ModelviewMatrix;
+		uniform vec2 MousePosition;
+		out vec3 col;
+		out vec3 norm;
+		out vec2 t2d;
+		out vec2 v_texcoord;
+		out vec3 v_worldcoords;
+		out vec2 m_position;
+		void main(void)
+		{
+			col = vec3(1,1,1);
+			t2d = T2D;
+			v_texcoord = T2D;
+			norm = NORM;
+			m_position = MousePosition;
+			gl_Position = ProjectionMatrix * ModelviewMatrix * vec4(POS,1);
+			v_worldcoords = POS;
+		}
+  	</script>
+
+	<script id="shader-fs" type="x-shader/x-fragment"> #version 300 es
+		precision highp float;
+		in vec3 col;
+		in vec2 v_texcoord;
+		in vec3 norm;
+		in vec3 v_worldcoords;
+		in vec2 t2d;
+		uniform sampler2D tex;
+		
+		out vec4 fragmentColor;
+		void main(void)
+		{
+			float light = max(0.3, dot(norm, normalize(vec3(1.1, 1.2, 1.3))) - (v_worldcoords.y / 6.0));
+
+			fragmentColor = vec4(col,1)*texture(tex,t2d);
+			//if(fragmentColor.x < 0.01) { fragmentColor.w = 1.0; }
+			fragmentColor.xyz *= light;
+		}
+	</script>
+
+	<script id="basic-vs" type="x-shader/x-vertex"> #version 300 es
+		in vec4 a_position;
+		out vec2 v_texcoord;
+		uniform vec2 MousePosition;
+		out vec2 m_position;
+
+		void main() {
+			gl_Position = a_position;
+			v_texcoord = a_position.xy * 0.5 + 0.5;
+			m_position = MousePosition;
+		} 
+	</script> 
+
+	<script id="mega-basic-fs" type="x-shader/x-fragment"> #version 300 es	
+		precision mediump float;
+		in float v_Age;
+		void main() { discard; }
+    
+	</script>
+
+	<script id="basic-fs" type="x-shader/x-fragment"> #version 300 es	
+		precision mediump float;
+		in vec2 v_texcoord;
+		uniform sampler2D tex;
+
+		out vec4 fragmentColor;
+		void main() {
+			fragmentColor = texture(tex, v_texcoord);
+		}
+	</script>
+
+	<script id="curved-fs" type="x-shader/x-fragment"> #version 300 es
+		precision mediump float;
+		in vec2 v_texcoord;
+		uniform sampler2D tex;
+		vec2 curvature = vec2(3.,3.);
+
+		out vec4 fragmentColor;
+		void main() {
+			vec2 uv = v_texcoord * 2.0 - 1.0;
+
+			vec2 offset = uv.yx / curvature.yx;
+
+			uv += (uv * offset * offset);
+
+			uv = (uv * 0.5) + vec2(0.5);
+			
+			vec2 remappedUV = uv;
+			if(remappedUV.x < 0. || remappedUV.y < 0. || remappedUV.x > 1. || remappedUV.y > 1.) {
+				fragmentColor = vec4(0.,0.,0.,1.);
+			} else {
+				fragmentColor = texture(tex, remappedUV);
+			}
+		}
+	</script>
+
+	<script id="fairies-fs" type="x-shader/x-fragment"> #version 300 es
+		precision mediump float;
+		in vec2 v_texcoord;
+		uniform sampler2D tex;
+		uniform sampler2D fairies_data;
+		uniform float option;
+		uniform float time;
+
+		// https://gist.github.com/patriciogonzalezvivo/670c22f3966e662d2f83
+		vec3 permute(vec3 x) { return mod(((x*34.0)+1.0)*x, 289.0); }
+		float snoise(vec2 v){
+			const vec4 C = vec4(0.211324865405187, 0.366025403784439,
+					 -0.577350269189626, 0.024390243902439);
+			vec2 i  = floor(v + dot(v, C.yy) );
+			vec2 x0 = v -   i + dot(i, C.xx);
+			vec2 i1;
+			i1 = (x0.x > x0.y) ? vec2(1.0, 0.0) : vec2(0.0, 1.0);
+			vec4 x12 = x0.xyxy + C.xxzz;
+			x12.xy -= i1;
+			i = mod(i, 289.0);
+			vec3 p = permute( permute( i.y + vec3(0.0, i1.y, 1.0 ))
+			+ i.x + vec3(0.0, i1.x, 1.0 ));
+			vec3 m = max(0.5 - vec3(dot(x0,x0), dot(x12.xy,x12.xy),
+			  dot(x12.zw,x12.zw)), 0.0);
+			m = m*m ;
+			m = m*m ;
+			vec3 x = 2.0 * fract(p * C.www) - 1.0;
+			vec3 h = abs(x) - 0.5;
+			vec3 ox = floor(x + 0.5);
+			vec3 a0 = x - ox;
+			m *= 1.79284291400159 - 0.85373472095314 * ( a0*a0 + h*h );
+			vec3 g;
+			g.x  = a0.x  * x0.x  + h.x  * x0.y;
+			g.yz = a0.yz * x12.xz + h.yz * x12.yw;
+			return 130.0 * dot(m, g);
+		}
+
+		float flamesspeed = 250.;
+		float noisescale = 20.;
+		out vec4 fragmentColor;
+		void main() {
+			fragmentColor = texture(fairies_data, v_texcoord);
+
+			if(option > 0.5) {
+				if(v_texcoord.x > 0.5) {
+					fragmentColor = texture(fairies_data, v_texcoord);
+				} else {
+					fragmentColor = texture(tex, v_texcoord);
+				}
+			} else {
+				//float value = snoise(vec2(v_texcoord.x * noisescale, v_texcoord.y * noisescale - (time / flamesspeed)));
+				//vec4 flamecolor = vec4(value);
+				//fragmentColor = mix(flamecolor,
+				//	texture(tex, v_texcoord),  
+				//	max(1.-max(texture(fairies_data, v_texcoord).x - .1, 0.0), value)
+				//);
+
+				float value = snoise(vec2(v_texcoord.x * noisescale, v_texcoord.y * noisescale - (time / flamesspeed)));
+				vec4 flamecolor = vec4(1., 0.8-value, 0., 1.);
+				fragmentColor = mix(flamecolor,
+					texture(tex, v_texcoord),  
+					max(
+						1.-max(texture(fairies_data, v_texcoord).x - .1, 0.0),
+						value
+						)
+				);
+			}
+			
+		}
+	</script>
+
+	<script id="blur-fs" type="x-shader/x-fragment"> #version 300 es
+		precision highp float;
+		in vec2 v_texcoord;
+		uniform sampler2D tex;
+
+		vec4 sample_loc(float dx, float dy) {
+			return texture(tex, v_texcoord + vec2(dx,dy));
+		}
+
+		out vec4 fragmentColor;
+		void main() {
+			float dX = 0.0006;
+			float dY = 0.0006;
+			fragmentColor =  1./273. * (
+							  1.*sample_loc(2.*-dX,2.*+dY) + 	4.*sample_loc(1.*-dX,2.*+dY) + 	7.*sample_loc(0.,2.*+dY) 	+ 4.*sample_loc(+dX,2.*+dY) + 	1.*sample_loc(2.*+dX,2.*+dY)
+							+ 4.*sample_loc(2.*-dX,+dY) + 		16.*sample_loc(1.*-dX,+dY) + 	26.*sample_loc(+dX,+dY) + 	16.*sample_loc(+dX,+dY) + 		4.*sample_loc(2.*+dX,+dY)
+							+ 7.*sample_loc(2.*-dX,0.) + 		26.*sample_loc(1.*-dX,0.) + 	41.*sample_loc(0.,0.) + 	26.*sample_loc(+dX,0.) + 		7.*sample_loc(2.*+dX,0.)
+							+ 4.*sample_loc(2.*-dX,-dY) + 		16.*sample_loc(1.*-dX,-dY) + 	26.*sample_loc(0.,-dY) + 	16.*sample_loc(+dX,-dY) + 		4.*sample_loc(2.*+dX,-dY)
+							+ 1.*sample_loc(2.*-dX,2.*-dY) + 	4.*sample_loc(1.*-dX,2.*-dY) + 	7.*sample_loc(0.,2.*-dY) + 	4.*sample_loc(+dX,2.*-dY) + 	1.*sample_loc(2.*+dX,2.*-dY)
+			);
+		}
+	</script>
+	
+	<script id="mouse-fs" type="x-shader/x-fragment"> #version 300 es
+		precision mediump float;
+		in vec2 v_texcoord;
+		in vec2 m_position;
+		uniform sampler2D tex;
+
+		out vec4 fragmentColor;
+		void main() {
+			float dist = length(v_texcoord - m_position);
+			vec4 backcolor = texture(tex, v_texcoord);
+
+			float value = max(fragmentColor + vec4(1.-(dist * 20.),0.,0.,1.-(dist * 20.)), fragmentColor).x;
+			if(dist < 0.049)  {
+				//fragmentColor = vec4(1. - dist * 20.,0.,0.,1. - dist);
+				fragmentColor += vec4(1.-(dist * 20.),0.,0.,1.-(dist * 20.));
+				
+			} else {
+				fragmentColor = texture(tex, v_texcoord) + vec4(0.0,0.0,0.0,0.1);
+			}
+		}
+	</script>
+
+	<script id="followers-update-vs" type="x-shader/x-fragment"> #version 300 es
+		precision mediump float;
+
+		uniform uint followers_amount;	// This defines how many pixels wide the buffer is 
+		uniform sampler2D data;
+
+		out uvecn data_position;
+		uniform uint mode;
+		uniform vec2 m_position;
+
+		const uint UpdateVelocities			= 0;
+		const uint UpdatePositions			= 1;
+		const uint UpdateSpeeds 			= 2;
+		const uint UpdateTargetPositions 	= 3;
+
+		// Structure of a column:
+		// Position					(0, 1, 2)	X,Y,Z
+		// Velocity					(3, 4, 5)	X,Y,Z
+		// TargetOffset				(6, 7, 8)	Angle, distance
+		// RGB (constant)			(10,11,12)	R,G,B
+		// Speed (dependent)		(13)		1/s
+		// Acceleration	(constant)	(14)		1/(s^2)
+
+		out vec4 fragmentColor;
+		void main() {
+			if(mode == UpdateVelocities) {
+				if(data_position.y > 2 && data_position.y < 6) {
+					if(data.position.y == 3) {
+						fragmentColor.x += (m_position.x - fragmentColor.x / 2);
+					}
+					else {
+						fragmentColor.x += (m_position.y - fragmentColor.x / 2);
+					}
+				}
+			} else if(mode == UpdatePositions) {
+				if(data_position.y < 3) {
+					fragmentColor.x += texture(data, uvecn(data_position.x, data_position.y + 3));
+				}
+			} else if(mode == UpdateSpeeds) {
+				if(data_position.y == )
+			} else if(mode == UpdateTargetPositions) {
+				// Change target position
+			}
+		}
+
+	</script>
+
+	<script id="crt-fs" type="x-shader/x-fragment"> #version 300 es
+		precision highp float;
+		in vec2 v_texcoord;
+		uniform sampler2D tex;
+		float xresolution = 60.0;	
+		float yresolution = 100.0;
+		float colorgaps = 0.00;
+		float vignette_val = 1.;
+
+		vec4 getFragColor(vec2 coord) {
+			vec2 transformed = coord;	// Transformed sampler
+			vec4 result = vec4(0.0);
+			vec4 multiplier = vec4(1.0,1.0,1.0,1.0);
+
+			// Add 
+			if(fract(transformed.x * xresolution) > 0.5) {		// every other fract of X,
+				transformed.y += (1.0/yresolution)*0.25;		// add a vertical offset to UV
+			}
+
+			// Get position relative to center of pixel or texel
+			vec2 pixel_relative_position = fract(vec2(transformed.x*xresolution*2.0, transformed.y*yresolution*2.0));					// Relative to bottom left corner of pixel
+			vec2 color_relative_position = (vec2(fract(transformed.x*xresolution*6.0), fract(transformed.y*yresolution*2.0))) - 0.5;	// Relative to center of specific color
+
+			if(abs(color_relative_position.y) > (0.5 - (((yresolution/xresolution) * colorgaps) / 3.0)) || abs(color_relative_position.x) > (0.5 - colorgaps)) {
+				return vec4(0.0,0.0,0.0,1.0);
+			} else {
+				// Divide into RGB colors and make each color of the pixel sample the same place
+				if(pixel_relative_position.x >= (2.0/3.0)) {						// If on the right side,
+					multiplier.xy = vec2(0.0);									// Disable R/G,
+					transformed.x -= ((1.0 / (xresolution * 3.0)) / 2.0);		// And move UV coordinate left to where color_relative_position is relative to G instead of B
+				}
+				else if(pixel_relative_position.x >= (1.0/3.0)) {				// Center G is already centered
+					multiplier.xz = vec2(0.0);
+				}
+				else {
+					multiplier.yz = vec2(0.0);
+					transformed.x += ((1.0 / (xresolution * 3.0)) / 2.0);
+				}
+
+				//result = vec4(length(pixel_relative_position), 0, 0, 1);			//For testing relative positions
+
+				// Move transformed UV coordinate to center of G
+				transformed.x -= (color_relative_position.x / (xresolution * 3.0))/2.0;		// Remove UV offset from  (divided by 3 colors for x);
+				transformed.y -= (color_relative_position.y / (yresolution))/2.0;
+
+				// Finally, sample texture at an offset of transformed, then subtract colors to add vignette around single colors and pixels
+				return (texture(tex, transformed) * multiplier) -
+					vignette_val * (vec4(
+						vec3(
+							//pow(
+							//	(abs(color_relative_position.x) + abs(color_relative_position.y)) * 1.5, 
+							//	3.0
+							//)
+							min(1.0, sqrt(pow(color_relative_position.x, 4.0) + pow(color_relative_position.y, 4.0) * 2.0))	
+						),
+					0.0
+					));
+					-
+					vignette_val * 2.0 * (vec4(
+						vec3(
+							//pow(
+								//length(pixel_relative_position)-0.5,
+								//3.0
+							//)
+							min(1.0, sqrt(pow(abs(pixel_relative_position.x - 0.5), 3.0) + pow(abs(pixel_relative_position.y - 0.5), 4.0) * 2.0))	
+						),
+					0.0
+					));
+			}
+		}
+
+		out vec4 fragmentColor;
+		void main() {
+			fragmentColor = vec4(getFragColor(v_texcoord).xyz, 1.0);
+
+			// Bad color bleed
+			//if(fragmentColor.x > 0.1) {
+			//	fragmentColor += vec4(getFragColor(0.3 * vec2(v_texcoord.x - xresolution/2., v_texcoord.y)).x, 0.,0.,0.1);
+			//}
+		}
+	</script>
+
+	<script type="text/javascript">
+		function CompileShader(gl, id)
+		{
+			//  Get shader by id
+			var src = document.getElementById(id);
+			//  Create shader based on type setting
+			var shader;
+			if (src.type == "x-shader/x-fragment")
+					shader = gl.createShader(gl.FRAGMENT_SHADER);
+			else if (src.type == "x-shader/x-vertex")
+					shader = gl.createShader(gl.VERTEX_SHADER);
+			else
+					return null;
+			//  Read source into str
+			var str = "";
+			var k = src.firstChild;
+			while (k)
+			{
+					if (k.nodeType == 3) str += k.textContent;
+					k = k.nextSibling;
+			}
+			gl.shaderSource(shader, str);
+			//  Compile the shader
+			gl.compileShader(shader);
+			//  Check for errors
+			if (gl.getShaderParameter(shader, gl.COMPILE_STATUS) == 0)
+					alert(gl.getShaderInfoLog(shader));
+			//  Return shader
+			return shader;
+		}
+
+		//
+		//  Compile shader program
+		//
+		function CompileShaderProg(gl,vert,frag,transform_feedback_varyings)
+		{
+			//  Compile the program
+			var prog  = gl.createProgram();
+			gl.attachShader(prog , CompileShader(gl,vert));
+			gl.attachShader(prog , CompileShader(gl,frag));
+			if (transform_feedback_varyings != null) {
+				gl.transformFeedbackVaryings(
+				prog,
+				transform_feedback_varyings,
+				gl.INTERLEAVED_ATTRIBS)
+			}
+			gl.linkProgram(prog);
+			//  Check for errors
+			if (gl.getProgramParameter(prog, gl.LINK_STATUS) == 0)
+					alert(gl.getProgramInfoLog(prog));
+			//  Return program
+			return prog;
+		}
+
+		var gl, canvas;
+		var basic_post_prog;
+		var blur_post_prog;
+		var current_post_prog;
+		var camloc = [0, 1, 2.45];
+		var camgoal = [0, 1, 2.45];
+		var camfrac = 0;
+		var curMouseX;
+		var curMouseY;
+		var post_processing_frags;
+		var fairiesdisplayopt = 0.4;
+		var beginprogtime = Date.now();
+
+		async function webGLStart() {
+			canvas = document.getElementById("canvas");
+
+			canvas.addEventListener('mousemove', function(evt) {
+				var mousePos = getMousePos(canvas, evt);
+				curMouseX = mousePos.x;
+				curMouseY = mousePos.y;
+			}, false);
+
+			var size = Math.min(window.innerWidth,window.innerHeight);
+			canvas.width  = size;
+   			canvas.height = size;
+			if(!window.WebGLRenderingContext) {
+				alert("Your browser does not support WebGL. See https:/get.webgl.org");
+				return;
+			}
+			try
+			{
+				gl = canvas.getContext("webgl2");
+			}
+			catch(e)
+			{}
+			if(!gl)
+			{
+				alert("Can't get WebGL");
+				return;
+			}
+
+			//gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+			gl.viewport(0,0,size,size);
+
+			var x0=y0=move=0;
+			
+			var prog = CompileShaderProg(gl,"shader-vs","shader-fs",null);
+			basic_post_prog = CompileShaderProg(gl,"basic-vs","basic-fs",null);
+			blur_post_prog = CompileShaderProg(gl,"basic-vs","blur-fs",null);
+			crt_post_prog = CompileShaderProg(gl,"basic-vs","crt-fs",null);
+			curved_post_prog = CompileShaderProg(gl,"basic-vs","curved-fs",null);
+			mouse_follow_prog = CompileShaderProg(gl,"basic-vs","mouse-fs",null);
+			fairies_prog = CompileShaderProg(gl,"basic-vs", "fairies-fs",null);
+			
+			post_processing_frags = new Array(crt_post_prog, curved_post_prog);
+
+			gl.useProgram(prog);
+
+			var ProjectionMatrix = new mat4();
+			//ProjectionMatrix.ortho(-2.5,+2.5,-2.5,+2.5,-2.5,+2.5);
+			ProjectionMatrix.perspective(120, 1, .01, 500);
+
+			gl.enable(gl.DEPTH_TEST);
+
+			var th=ph=15;
+
+			model_buffers = new Array();
+
+			let model = await gltf_to_data(gl, "resources/temple", "temple");
+
+			var end = Date.now();
+			const frame_and_tex = createFramebuffer(gl, [canvas.width, canvas.height]);
+			const frame_and_tex2 = createFramebuffer(gl, [canvas.width, canvas.height]);
+			const frame_and_tex3 = createFramebuffer(gl, [canvas.width, canvas.height]);
+			const frame_and_tex4 = createFramebuffer(gl, [canvas.width, canvas.height]);
+			const frame_and_tex5 = createFramebuffer(gl, [canvas.width, canvas.height]);
+
+			// set up frametexbuf4 for drawing onto itself
+			gl.bindFramebuffer(gl.FRAMEBUFFER, frame_and_tex4.buffer);
+			gl.bindTexture(gl.TEXTURE_2D, frame_and_tex4.texture);
+			gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+			gl.enable( gl.BLEND );
+			const depthBuffer = gl.createRenderbuffer();
+
+			const screen_verts = [
+					1,  1,
+					-1,  1,
+					-1, -1,
+					1,	1,
+					1, -1,
+					-1, -1
+			];
+			const screenVertBuffer = gl.createBuffer();
+			gl.bindBuffer(gl.ARRAY_BUFFER, screenVertBuffer);
+			gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(screen_verts), gl.STATIC_DRAW);
+			gl.bindBuffer(gl.ARRAY_BUFFER, null);
+
+			var start = Date.now();
+			var frameSwitcher = 1;
+			Display();
+			function Display()
+			{
+				frameswitcher = 1 - frameSwitcher;
+				end = start;
+				start = Date.now();
+
+				camfrac = Math.min(camfrac + 0.05, 1);
+				// Compute modelview matrix
+				var ModelviewMatrix = new mat4();
+				ModelviewMatrix.scale(3,3,3);
+				ModelviewMatrix.rotate(th,1,0,0);
+				ModelviewMatrix.rotate(ph,0,1,0);
+				ModelviewMatrix.translate(camloc[0], camloc[1], camloc[2]);
+				var time = (start-end) * 0.003;
+				camloc[0] += (camgoal[0] - camloc[0]) * (time);
+				camloc[1] += (camgoal[1] - camloc[1]) * (time);
+				camloc[2] += (camgoal[2] - camloc[2]) * (time);
+
+				
+				gl.bindFramebuffer(gl.FRAMEBUFFER, frame_and_tex.buffer);
+				gl.bindRenderbuffer(gl.RENDERBUFFER, depthBuffer);
+				gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_COMPONENT16, canvas.width, canvas.height);
+				gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, depthBuffer);
+
+				gl.useProgram(prog);
+				var texLocation = gl.getUniformLocation(prog, "tex");
+				for(let j=0; j<model["meshes"].length; j++) {
+					var j_data = model["meshes"][j];
+					gl.activeTexture(gl.TEXTURE0);
+					gl.uniform1i(texLocation, 0);
+					gl.bindTexture(gl.TEXTURE_2D, model["materials"][j_data[1]]);
+					gl.bindBuffer(gl.ARRAY_BUFFER, j_data[0]);
+					var POS = gl.getAttribLocation(prog, "POS");
+					var NORM = gl.getAttribLocation(prog, "NORM");
+					var T2D = gl.getAttribLocation(prog, "T2D");
+					gl.enableVertexAttribArray(POS);
+					gl.vertexAttribPointer(POS,3,gl.FLOAT,false,32,0);
+					gl.enableVertexAttribArray(NORM);
+					gl.vertexAttribPointer(NORM,3,gl.FLOAT,false,32,12);
+					gl.enableVertexAttribArray(T2D);
+					gl.vertexAttribPointer(T2D,2,gl.FLOAT,false,32,24);
+					gl.uniformMatrix4fv(gl.getUniformLocation(prog,"ProjectionMatrix") , false , ProjectionMatrix.getMat());
+					gl.uniformMatrix4fv(gl.getUniformLocation(prog,"ModelviewMatrix")  , false , ModelviewMatrix.getMat());
+					gl.drawArrays(gl.TRIANGLES,0,j_data[2]);
+					gl.disableVertexAttribArray(POS);
+					gl.disableVertexAttribArray(NORM);
+					gl.disableVertexAttribArray(T2D);
+				}
+				gl.bindBuffer(gl.ARRAY_BUFFER, null);
+
+				// Post-processing below this point
+				// Write mouse position to the cumulative mouse buffer
+				bindTextureAndFramebuffer((frameSwitcher == 1 ? frame_and_tex3 : frame_and_tex4).texture, (frameSwitcher == 1 ? frame_and_tex4 : frame_and_tex3).buffer);
+				gl.useProgram(mouse_follow_prog);
+				gl.uniform2fv(gl.getUniformLocation(mouse_follow_prog, "MousePosition"), [curMouseX, curMouseY]);
+				doPostProcessPass(mouse_follow_prog);
+				
+				// Flip flop between buffers
+				gl.activeTexture(gl.TEXTURE0);
+				var lastUsedIteration = 0;
+				for(let i=0; i<post_processing_frags.length; i++) {
+					lastUsedIteration = i;
+					bindTextureAndFramebuffer((i % 2 == 0 ? frame_and_tex : frame_and_tex2).texture, (i % 2 == 0 ? frame_and_tex2 : frame_and_tex).buffer)
+					gl.useProgram(post_processing_frags[i]);
+					gl.uniform2fv(gl.getUniformLocation(post_processing_frags[i], "MousePosition"), [curMouseX, curMouseY]);
+					doPostProcessPass(post_processing_frags[i]);
+				}
+
+				// Draw flames to last buffer using cumulative mouse buffer
+				gl.useProgram(fairies_prog);
+				var prev_render_loc = gl.getUniformLocation(prog, "tex");
+				var fairiesLocation = gl.getUniformLocation(fairies_prog, "fairies_data");
+				gl.uniform1i(prev_render_loc, 0);
+				gl.uniform1i(fairiesLocation, 1);
+				gl.uniform1fv(gl.getUniformLocation(fairies_prog, "option"), [fairiesdisplayopt]);
+				gl.uniform1fv(gl.getUniformLocation(fairies_prog, "time"), [Date.now() - beginprogtime]);
+				gl.activeTexture(gl.TEXTURE0);
+				gl.bindTexture(gl.TEXTURE_2D, (lastUsedIteration == 1 ? frame_and_tex : frame_and_tex2).texture);
+				gl.activeTexture(gl.TEXTURE1);
+				gl.bindTexture(gl.TEXTURE_2D, (frameSwitcher == 0 ? frame_and_tex3 : frame_and_tex4).texture);
+				gl.bindBuffer(gl.ARRAY_BUFFER, null);
+
+				gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+				//gl.uniform2fv(gl.getUniformLocation(fairies_prog, "MousePosition"), [curMouseX, curMouseY]);
+				doPostProcessPass(fairies_prog);
+
+				gl.bindTexture(gl.TEXTURE_2D, null);
+
+				gl.finish();
+				window.requestAnimationFrame(Display);
+			}
+
+			function bindTextureAndFramebuffer(texture, framebuffer) {
+				gl.bindTexture(gl.TEXTURE_2D, texture);
+				gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
+			}
+
+			function doPostProcessPass(prog) {
+				gl.bindBuffer(gl.ARRAY_BUFFER, screenVertBuffer);
+				var XYZ = gl.getAttribLocation(prog, "a_position");
+				gl.vertexAttribPointer(XYZ, 2, gl.FLOAT, false, 0, 0);
+				gl.enableVertexAttribArray(XYZ);
+				gl.drawArrays(gl.TRIANGLES, 0, 6);
+				gl.disableVertexAttribArray(XYZ);
+				gl.bindBuffer(gl.ARRAY_BUFFER, null);
+			}
+
+			function unbindBuffers() {
+				gl.bindTexture(gl.TEXTURE_2D, null);
+				gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+			}
+			
+			canvas.resize = function ()
+			{
+				var size = Math.min(window.innerWidth, window.innerHeight);
+				canvas.width  = size;
+				canvas.height = size;
+				gl.viewport(0,0,size,size);
+				Display();
+			}
+
+			canvas.onmousedown = function (ev)
+			{
+				move  = 1;
+				x0 = ev.clientX;
+				y0 = ev.clientY;
+			}
+
+			//
+			//  Mouse button released
+			//
+			canvas.onmouseup = function (ev)
+			{
+				move  = 0;
+			}
+
+			//
+			//  Mouse movement
+			//
+			canvas.onmousemove = function (ev)
+			{
+				if (move==0) return;
+				//  Update angles
+				ph -= ev.clientX-x0;
+				th += ev.clientY-y0;
+				//  Store location
+				x0 = ev.clientX;
+				y0 = ev.clientY;
+
+				var x = 2.0 * (ev.pageX - this.offsetLeft)/this.width - 1.0; 
+				var y = -(2.0 * (ev.pageY - this.offsetTop)/this.height - 1.0);
+
+				//  Redisplay
+				if(th>90) {th = 90;}
+				else if(th<-90) {th = -90;}
+				gl.bindBuffer(gl.FRAMEBUFFER, null);
+				gl.clearColor(1.,1.,1.,1.);
+				//Display();
+			}
+
+			// https://webplatform.github.io/docs/tutorials/post-processing_with_webgl/
+			function createTexture(gl, size) {
+				var texture = gl.createTexture();
+				//set properties for the texture
+				gl.bindTexture(gl.TEXTURE_2D, texture);
+				gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+				gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+				gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+				gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+
+				gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, size[1], size[1], 0, gl.RGBA, gl.UNSIGNED_BYTE, null);		// Change size[1] size[1] to use canvas size later
+
+				return texture;
+			}
+			// https://webplatform.github.io/docs/tutorials/post-processing_with_webgl/
+			function createFramebuffer(gl, size) {
+				var buffer = gl.createFramebuffer();
+				//bind framebuffer to texture
+				gl.bindFramebuffer(gl.FRAMEBUFFER, buffer);
+				var texture = createTexture(gl, size);
+				gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0);
+
+				return {
+					texture: texture,
+					buffer: buffer
+				};
+			}
+
+			document.getElementById("blurbutton").onclick = function() {post_processing_frags.push(blur_post_prog); };
+			document.getElementById("crtbutton").onclick = function() { post_processing_frags.push(crt_post_prog); };
+			document.getElementById("curvebutton").onclick = function() { post_processing_frags.push(curved_post_prog); };
+			document.getElementById("resetbutton").onclick = function() { post_processing_frags = new Array(basic_post_prog); };
+			document.getElementById("togglesplit").onclick = function() { fairiesdisplayopt = 1.0 - fairiesdisplayopt; };
+			document.getElementById("gotosword").onclick = function() { camgoal = [0, 1, 2.45]; };
+			document.getElementById("gotohall").onclick = function() { camgoal = [0, 1.2, -4]; };
+			/*canvas.addEventListener("click", async () => {
+  				await canvas.requestPointerLock();
+			});*/
+		}
+
+		function getMousePos(canvas, evt) {
+			var rect = canvas.getBoundingClientRect();
+			return {
+				x: ((evt.clientX - rect.left) / canvas.width),
+				y: (1 - ((evt.clientY - rect.top) / canvas.height))
+			};
+		}
+
+	</script>
+  </head>
+
+  
+  <body onload="webGLStart();" style="background-color:black;">
+		<script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+		<script src="https://cdn.jsdelivr.net/npm/popper.js@1.14.7/dist/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+		<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.3.1/dist/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+
+		<img src="resources/construction.gif" class="rounded float-left img-fluid" alt="...">
+
+		<div class="container">
+			<div class="row">
+			  <div class="col-sm">
+				<button id="blurbutton">Blur</button>
+				<button id="crtbutton">CRT</button>
+				<button id="curvebutton">Curve</button>
+				<button id="resetbutton">Reset</button>
+				<button id="togglesplit">Toggle Split</button>
+			  </div>
+			  <div class="col-me">
+				<canvas id="canvas"></canvas>
+			  </div>
+			  <div class="col-sm">
+				<button id="gotosword">Master Sword</button>
+				<button id="gotohall">Main Hall</button>
+			  </div>
+			</div>
+		  </div>
+	
+  </body>
+</html>

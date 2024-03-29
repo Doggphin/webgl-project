@@ -1,0 +1,253 @@
+{
+    "asset" : {
+        "generator" : "Khronos glTF Blender I/O v1.5.17",
+        "version" : "2.0"
+    },
+    "scene" : 0,
+    "scenes" : [
+        {
+            "name" : "Scene",
+            "nodes" : [
+                0
+            ]
+        }
+    ],
+    "nodes" : [
+        {
+            "mesh" : 0,
+            "name" : "fairys_fountain_town.001",
+            "rotation" : [
+                0.7071068286895752,
+                0,
+                0,
+                0.7071067094802856
+            ],
+            "scale" : [
+                0.016506027430295944,
+                0.016506027430295944,
+                0.016506027430295944
+            ],
+            "translation" : [
+                -38.40409851074219,
+                0.13012056052684784,
+                10.931793212890625
+            ]
+        }
+    ],
+    "materials" : [
+        {
+            "doubleSided" : true,
+            "name" : "Material.001",
+            "pbrMetallicRoughness" : {
+                "baseColorTexture" : {
+                    "index" : 0
+                },
+                "metallicFactor" : 0,
+                "roughnessFactor" : 0.5
+            }
+        }
+    ],
+    "meshes" : [
+        {
+            "name" : "geom-01250FF3.002",
+            "primitives" : [
+                {
+                    "attributes" : {
+                        "POSITION" : 0,
+                        "NORMAL" : 1,
+                        "TEXCOORD_0" : 2,
+                        "COLOR_0" : 3,
+                        "COLOR_1" : 4,
+                        "COLOR_2" : 5,
+                        "COLOR_3" : 6,
+                        "COLOR_4" : 7,
+                        "COLOR_5" : 8,
+                        "COLOR_6" : 9,
+                        "COLOR_7" : 10
+                    },
+                    "indices" : 11,
+                    "material" : 0
+                }
+            ]
+        }
+    ],
+    "textures" : [
+        {
+            "sampler" : 0,
+            "source" : 0
+        }
+    ],
+    "images" : [
+        {
+            "mimeType" : "image/png",
+            "name" : "texture",
+            "uri" : "texture.png"
+        }
+    ],
+    "accessors" : [
+        {
+            "bufferView" : 0,
+            "componentType" : 5126,
+            "count" : 4264,
+            "max" : [
+                2781.800048828125,
+                857.97998046875,
+                30.079999923706055
+            ],
+            "min" : [
+                2014.2000732421875,
+                -1132.800048828125,
+                -608.4599609375
+            ],
+            "type" : "VEC3"
+        },
+        {
+            "bufferView" : 1,
+            "componentType" : 5126,
+            "count" : 4264,
+            "type" : "VEC3"
+        },
+        {
+            "bufferView" : 2,
+            "componentType" : 5126,
+            "count" : 4264,
+            "type" : "VEC2"
+        },
+        {
+            "bufferView" : 3,
+            "componentType" : 5123,
+            "count" : 4264,
+            "normalized" : true,
+            "type" : "VEC4"
+        },
+        {
+            "bufferView" : 4,
+            "componentType" : 5123,
+            "count" : 4264,
+            "normalized" : true,
+            "type" : "VEC4"
+        },
+        {
+            "bufferView" : 5,
+            "componentType" : 5123,
+            "count" : 4264,
+            "normalized" : true,
+            "type" : "VEC4"
+        },
+        {
+            "bufferView" : 6,
+            "componentType" : 5123,
+            "count" : 4264,
+            "normalized" : true,
+            "type" : "VEC4"
+        },
+        {
+            "bufferView" : 7,
+            "componentType" : 5123,
+            "count" : 4264,
+            "normalized" : true,
+            "type" : "VEC4"
+        },
+        {
+            "bufferView" : 8,
+            "componentType" : 5123,
+            "count" : 4264,
+            "normalized" : true,
+            "type" : "VEC4"
+        },
+        {
+            "bufferView" : 9,
+            "componentType" : 5123,
+            "count" : 4264,
+            "normalized" : true,
+            "type" : "VEC4"
+        },
+        {
+            "bufferView" : 10,
+            "componentType" : 5123,
+            "count" : 4264,
+            "normalized" : true,
+            "type" : "VEC4"
+        },
+        {
+            "bufferView" : 11,
+            "componentType" : 5123,
+            "count" : 11700,
+            "type" : "SCALAR"
+        }
+    ],
+    "bufferViews" : [
+        {
+            "buffer" : 0,
+            "byteLength" : 51168,
+            "byteOffset" : 0
+        },
+        {
+            "buffer" : 0,
+            "byteLength" : 51168,
+            "byteOffset" : 51168
+        },
+        {
+            "buffer" : 0,
+            "byteLength" : 34112,
+            "byteOffset" : 102336
+        },
+        {
+            "buffer" : 0,
+            "byteLength" : 34112,
+            "byteOffset" : 136448
+        },
+        {
+            "buffer" : 0,
+            "byteLength" : 34112,
+            "byteOffset" : 170560
+        },
+        {
+            "buffer" : 0,
+            "byteLength" : 34112,
+            "byteOffset" : 204672
+        },
+        {
+            "buffer" : 0,
+            "byteLength" : 34112,
+            "byteOffset" : 238784
+        },
+        {
+            "buffer" : 0,
+            "byteLength" : 34112,
+            "byteOffset" : 272896
+        },
+        {
+            "buffer" : 0,
+            "byteLength" : 34112,
+            "byteOffset" : 307008
+        },
+        {
+            "buffer" : 0,
+            "byteLength" : 34112,
+            "byteOffset" : 341120
+        },
+        {
+            "buffer" : 0,
+            "byteLength" : 34112,
+            "byteOffset" : 375232
+        },
+        {
+            "buffer" : 0,
+            "byteLength" : 23400,
+            "byteOffset" : 409344
+        }
+    ],
+    "samplers" : [
+        {
+            "magFilter" : 9729,
+            "minFilter" : 9987
+        }
+    ],
+    "buffers" : [
+        {
+            "byteLength" : 432744,
+            "uri" : "fairy.bin"
+        }
+    ]
+}

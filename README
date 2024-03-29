@@ -1,0 +1,10 @@
+For this assignment I set up post-processing in WebGL and created a CRT shader.
+
+While not relevant to this assignment in general I also really improved my
+model loader, which can now have nested meshes and multiple materials.
+
+You can change shaders using the left buttons and change world positions using the right buttons.
+You can rotate the camera by clicking and dragging on the screen.
+
+The temple of time is a direct and this time unmodified (minus changing formats)
+model from the N64 game LoZ: Ocarina of Time :)
