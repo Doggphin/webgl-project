@@ -1,10 +1,29 @@
-For this assignment I set up post-processing in WebGL and created a CRT shader.
+# webgl-project
 
-While not relevant to this assignment in general I also really improved my
-model loader, which can now have nested meshes and multiple materials.
+A work-in-progress website I used for a couple of weekly assignments in my computer graphics course in Spring 2024.
 
-You can change shaders using the left buttons and change world positions using the right buttons.
-You can rotate the camera by clicking and dragging on the screen.
+This website includes real-time 3D rendering with .GLTF model and texture loading using WebGL and JS along with several post-processing shader effects, such as a CRT shader and flames following the mouse.
 
-The temple of time is a direct and this time unmodified (minus changing formats)
-model from the N64 game LoZ: Ocarina of Time :)
+## Instructions:
+
+Controls:
+ - Look around by clicking and dragging the mouse.
+ - Select shaders by clicking buttons on the left.
+ - Select viewpoints by clicking buttons on the right.
+
+To run using Node.js:
+```
+http-server <directory>
+```
+
+## Screenshots:
+### CRT and Curve shader active
+![Test](Screenshot_1.png)
+### No post-processing effects
+![Test](Screenshot_2.png)
+### With and without exaggerated shaders
+![Test](Screenshot_3.png)
+![Test](Screenshot_4.png)
+
+## Credits:
+The 3D model is ripped from the N64 game *The Legend of Zelda: Ocarina of Time*.
