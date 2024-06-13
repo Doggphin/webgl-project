@@ -1,6 +1,6 @@
 # WebGL Project
 
-A work-in-progress website I used for a couple of weekly assignments in my computer graphics course in Spring 2024 using WebGL 2 and JS.
+A work-in-progress website I used for a couple of weekly assignments in my computer graphics course in Spring 2024 using WebGL.
 
 This website includes real-time 3D rendering with .GLTF model and texture loading using WebGL and JS along with several post-processing shader effects, such as a CRT shader and flames following the mouse.
 
